@@ -20,7 +20,7 @@ country
 
 FROM `red-function-478012-q6.stock_data.raw_stock_data_layer` as a --data comes from GCS bucket
 
--- WHERE Clause to ensure duplicated data will not be ingested more than one to the raw table. 
+-- WHERE Clause holds a deduplication logic thats comparing the Ticker name and its fetch data with existing rows in the table so it wont add already exisitng data from the cloud.
 -- this also enables the table to hold historical data.
 
 WHERE NOT EXISTS (
