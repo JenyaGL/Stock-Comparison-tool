@@ -5,16 +5,8 @@ BEGIN
 INSERT into stock_data.filtered_stock_data_layer(name, country, current_price, price_change, percent_change, high, low, open, prev_close, price_range, date, time, fetched_date)
 
 -- 
- WITH ranked AS (
-      SELECT *,
-          ROW_NUMBER() OVER (
-              PARTITION BY symbol, CAST(fetched_at AS DATETIME)
-              ORDER BY fetched_at DESC
-          ) AS rn
-      FROM stock_data.raw_stock_data_layer
-  )
-
   SELECT
+
     UPPER(TRIM(symbol)) AS name,
     UPPER(TRIM(country)) AS country,
     COALESCE(c, 0) AS current_price,
@@ -28,8 +20,13 @@ INSERT into stock_data.filtered_stock_data_layer(name, country, current_price, p
     CAST(fetched_at AS DATE) AS date,
     TIME(fetched_at) AS time,
     CAST(fetched_at AS DATETIME) AS fetched_date
-    
-  FROM ranked
-  WHERE rn = 1;
 
-END;
+  FROM stock_data.raw_stock_data_layer a
+  WHERE NOT EXISTS (SELECT 1 
+                    FROM stock_data.filtered_stock_data_layer b
+                    WHERE 
+                    b.name = UPPER(TRIM(a.symbol)) AND b.fetched_date = CAST(a.fetched_at AS DATETIME)
+  );
+
+
+END
