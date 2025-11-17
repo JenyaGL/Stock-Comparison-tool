@@ -40,5 +40,5 @@ Looker - Dashboard and reporting
 
 I specifically chose Looker Studio as the BI tool since the data is already being stored in GCS(Google cloud services) and processed with Big Query the only logical move is to stay within the google ecosystem and implement Looker into this project.
 
-  [Looker Report](https://lookerstudio.google.com/s/v_q-FY5MVXI)
+  [Looker Report](https://lookerstudio.google.com/reporting/4d89768f-4948-4941-99d4-e922719ec490)
   
