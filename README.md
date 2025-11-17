@@ -22,4 +22,6 @@ The goal is to pull real-time and historical stock data via API, store it in clo
   
 
   I specifically chose Looker Studio as the BI tool since the data is already being stored in GCS(Google cloud services) and processed with Big Query the only logical move is to stay within the google ecosystem and implement Looker into this project.
+
+  [Looker Report]([https://link.com](https://lookerstudio.google.com/s/v_q-FY5MVXI))
   
