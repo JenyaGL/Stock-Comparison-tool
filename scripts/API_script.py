@@ -6,14 +6,11 @@
 # -------------------------------------------
 
 # libs:
-import os
-import pip
-## pip install google-cloud-storage requests
 import requests
 import json
 from datetime import datetime
 from google.cloud import storage
-
+from google.cloud import bigquery  
 
 
 
@@ -95,21 +92,18 @@ client = storage.Client()
 bucket = client.bucket(GCS_BUCKET)
 
 
-# FUNCTION TO PULL & UPLOAD:
-def fetch_and_upload(ticker):
-    print(f"\n Starting process for: {ticker}")
+# functions:
 
+# function that triggers data ingestion fro API, it pulls all the KPAs and assignes the country for each Ticker and uploads it to the bucket
+def fetch_and_upload(ticker, bucket):
     url = f'https://finnhub.io/api/v1/quote?symbol={ticker}&token={API_KEY}'
-    print(f"Requesting data from: {url}")
-
     response = requests.get(url)
+
     if response.status_code != 200:
-        print(f"❌ API request failed for {ticker} with status {response.status_code}")
+        print(f"❌ API request failed for {ticker}")
         return
 
     data = response.json()
-
-    # ✅ Add required metadata
     data["symbol"] = ticker
     data["fetched_at"] = datetime.utcnow().isoformat()
     data["country"] = TICKER_COUNTRY_MAP.get(ticker, "Unknown")
@@ -117,19 +111,24 @@ def fetch_and_upload(ticker):
     filename = f"{FOLDER}/{ticker}_{datetime.today().strftime('%Y-%m-%d')}.json"
     blob = bucket.blob(filename)
 
-    ndjson_string = json.dumps(data) + "\n"  # this gives NDJSON format which is essintial to Big Query
+    blob.upload_from_string(json.dumps(data) + "\n", content_type='application/json')
+    print(f"📤 Uploaded: gs://{GCS_BUCKET}/{filename}")
 
-    try:
-        blob.upload_from_string(ndjson_string, content_type='application/json')
-        print(f"📤 Uploaded to: gs://{GCS_BUCKET}/{filename}")
-        print(f"🧾 Stored JSON: {ndjson_string}")
-    except Exception as e:
-        print(f"❌ Upload failed: {e}")
+# function that triggers the BigQuery Procedures(from json)
+def run_bigquery_pipeline():
+    client = bigquery.Client()
+    query = "CALL stock_data.daily_stock_pipeline();"
+    query_job = client.query(query)
+    query_job.result()
+    print("✅ BigQuery pipeline executed")
 
+# Cloud Function entrypoint
+def fetch_all_stock_data(request):
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(GCS_BUCKET)
 
-# MAIN EXECUTION:
-if __name__ == "__main__":
-    print("🚀 Starting stock data pipeline...\n")
     for ticker in TICKERS:
-        fetch_and_upload(ticker)
-    print("\n✅ Pipeline run completed.")
+        fetch_and_upload(ticker, bucket)
+
+    run_bigquery_pipeline()
+    return "✅ All stock data uploaded and pipeline triggered"
