@@ -114,7 +114,11 @@ def fetch_and_upload(ticker, bucket):
     blob.upload_from_string(json.dumps(data) + "\n", content_type='application/json')
     print(f"📤 Uploaded: gs://{GCS_BUCKET}/{filename}")
 
-# function that triggers the BigQuery Procedures(from json)
+# function that triggers the main BigQuery Procedures(from json)
+# Every time your Cloud Function runs (scheduled daily by Cloud Scheduler),
+# It first pulls API data → uploads to GCS,
+# Then triggers the BigQuery stored procedure to process the data.
+
 def run_bigquery_pipeline():
     client = bigquery.Client()
     query = "CALL stock_data.daily_stock_pipeline();"
