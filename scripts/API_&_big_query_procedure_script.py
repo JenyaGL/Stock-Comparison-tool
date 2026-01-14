@@ -18,13 +18,19 @@ from google.cloud import bigquery
 
 API_KEY = '--'   # ← Replace with your real key
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "your json key from GCS"
 
 GCS_BUCKET = 'Write the name of your GCS bucket'
 
 CREDENTIAL_PATH = 'your json key from GCS'
 
 FOLDER = 'write the folder name thats in the bucket'
+
+
+# AUTHENTICATE:
+
+client = storage.Client()
+bucket = client.bucket(GCS_BUCKET)
+
 
 # TICKERS LIST:                  
 TICKERS = [
@@ -45,12 +51,10 @@ TICKERS = [
     # FR
     'SAFRF', # Safran (OTC)
     'THLEF', # Thales Group (OTC)
-    # Dassault, MBDA, Naval Group → Not publicly traded / no active ticker
 
     # DE
     'RNMBF', # Rheinmetall (OTC)
     'HAGHY',# Hensoldt AG (Frankfurt)
-    # MTX.DE, TKAG.DE → hard to verify defense relevance on free tier
 
     # IT
     'FINMY', # Fincantieri (OTC ADR)
@@ -59,7 +63,6 @@ TICKERS = [
     # ISR
     'ESLT',  # Elbit Systems (NASDAQ)
     'RADA',  # RADA Electronic (now part of DRS)
-    'IAI'    # Israel Aerospace Industries – not publicly listed
 ]
 
 # Countries
@@ -81,15 +84,9 @@ TICKER_COUNTRY_MAP = {
     'FINMY': 'Italy', 'AVIOY': 'Italy',
 
     # Israel
-    'ESLT': 'Israel', 'RADA': 'Israel', 'IAI': 'Israel'
+    'ESLT': 'Israel', 'RADA': 'Israel'
 }
 
-
-# AUTHENTICATE:
-
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = CREDENTIAL_PATH
-client = storage.Client()
-bucket = client.bucket(GCS_BUCKET)
 
 
 # functions:
@@ -97,7 +94,7 @@ bucket = client.bucket(GCS_BUCKET)
 # function that triggers data ingestion fro API, it pulls all the KPAs and assignes the country for each Ticker and uploads it to the bucket
 def fetch_and_upload(ticker, bucket):
     url = f'https://finnhub.io/api/v1/quote?symbol={ticker}&token={API_KEY}'
-    response = requests.get(url)
+    response = requests.get(url, timeout=10)
 
     if response.status_code != 200:
         print(f"❌ API request failed for {ticker}")
